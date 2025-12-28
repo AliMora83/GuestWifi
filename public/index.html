@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GuestPass - WiFi Guest Card Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.25);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.18);
+        }
+
+        .guest-card {
+            background: rgba(255, 255, 255, 0.9); /* Opaque for printing readability */
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+        }
+
+        @media print {
+            body {
+                background: white;
+            }
+            .no-print {
+                display: none !important;
+            }
+            .guest-card {
+                box-shadow: none;
+                border: 2px solid #000;
+                page-break-inside: avoid;
+            }
+            #result-area {
+                display: block !important;
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                margin: 0;
+                padding: 20px;
+            }
+            .glass-panel {
+                background: none;
+                box-shadow: none;
+                border: none;
+                backdrop-filter: none;
+            }
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center p-4">
+
+    <div class="glass-panel w-full max-w-4xl p-8 flex flex-col md:flex-row gap-8 items-start">
+        <!-- Form Section -->
+        <div class="w-full md:w-1/2 no-print">
+            <h1 class="text-3xl font-bold text-white mb-2">GuestPass</h1>
+            <p class="text-white/80 mb-6">Create a beautiful WiFi access card for your guests.</p>
+            
+            <form id="wifi-form" class="space-y-4">
+                <div>
+                    <label for="ssid" class="block text-sm font-medium text-white mb-1">Network Name (SSID)</label>
+                    <input type="text" id="ssid" name="ssid" required placeholder="MyHomeWiFi" 
+                        class="w-full px-4 py-2 rounded-lg bg-white/20 border border-white/30 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/50 transition duration-200">
+                </div>
+                <div>
+                    <label for="password" class="block text-sm font-medium text-white mb-1">Password</label>
+                    <input type="password" id="password" name="password" placeholder="SecurePassword123" 
+                        class="w-full px-4 py-2 rounded-lg bg-white/20 border border-white/30 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/50 transition duration-200">
+                </div>
+                
+                <button type="submit" 
+                    class="w-full bg-white text-indigo-900 font-bold py-3 px-4 rounded-lg hover:bg-white/90 transition duration-200 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg">
+                    Generate Guest Card
+                </button>
+            </form>
+        </div>
+
+        <!-- Preview/Result Section -->
+        <div id="result-area" class="w-full md:w-1/2 flex flex-col items-center justify-center hidden opacity-0 transition-opacity duration-500">
+            
+            <div class="guest-card p-8 w-full max-w-sm text-center transform transition-all duration-500 hover:scale-105">
+                <div class="mb-4">
+                    <svg class="mx-auto h-12 w-12 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0" />
+                    </svg>
+                </div>
+                <h2 class="text-2xl font-bold text-gray-800 mb-1">Wi-Fi Guest Access</h2>
+                <p class="text-gray-500 text-sm mb-6">Scan to connect</p>
+                
+                <div class="bg-white p-2 rounded-lg inline-block border border-gray-100 mb-6">
+                    <img id="qr-code" src="" alt="WiFi QR Code" class="w-48 h-48 object-contain">
+                </div>
+
+                <div class="text-left bg-gray-50 rounded-lg p-4 space-y-2">
+                    <div class="flex justify-between items-center border-b border-gray-200 pb-2">
+                        <span class="text-xs uppercase tracking-wider text-gray-400 font-semibold">Network</span>
+                        <span id="display-ssid" class="font-mono font-medium text-gray-800 text-lg"></span>
+                    </div>
+                    <div class="flex justify-between items-center pt-1">
+                        <span class="text-xs uppercase tracking-wider text-gray-400 font-semibold">Password</span>
+                        <span id="display-password" class="font-mono font-medium text-gray-800 text-lg"></span>
+                    </div>
+                </div>
+            </div>
+
+            <button onclick="window.print()" class="mt-6 flex items-center gap-2 bg-indigo-600 text-white px-6 py-2 rounded-full hover:bg-indigo-700 transition shadow-lg no-print">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+                Print Card
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const form = document.getElementById('wifi-form');
+        const resultArea = document.getElementById('result-area');
+        const qrImage = document.getElementById('qr-code');
+        const displaySsid = document.getElementById('display-ssid');
+        const displayPassword = document.getElementById('display-password');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(form);
+            const ssid = formData.get('ssid');
+            const password = formData.get('password');
+
+            try {
+                const response = await fetch('/api/generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ssid, password })
+                });
+
+                if (!response.ok) throw new Error('Generation failed');
+
+                const data = await response.json();
+                
+                qrImage.src = data.qrCode;
+                displaySsid.textContent = ssid;
+                displayPassword.textContent = password || 'None';
+                
+                resultArea.classList.remove('hidden');
+                // Trigger reflow for transition
+                void resultArea.offsetWidth;
+                resultArea.classList.remove('opacity-0');
+
+            } catch (error) {
+                alert('Error generating QR Code. Please try again.');
+                console.error(error);
+            }
+        });
+    </script>
+</body>
+</html>
